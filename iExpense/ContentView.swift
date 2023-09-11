@@ -7,38 +7,94 @@
 
 import SwiftUI
 
-struct User: Codable {
-    let firstName: String
-    let lastName: String
-}
-
 struct ContentView: View {
-    @State private var user = User(firstName: "Mei", lastName: "Dhaka")
+    @StateObject var expenses = Expenses()
+    @State private var showingAddExpense = false
+    @State private var searchText = ""
+    
+    let colors = [
+        Color(red: 1, green: 0.38, blue: 0.38, opacity: 0.3),
+        Color(red: 1, green: 0.38, blue: 0.38, opacity: 0.5),
+        Color(red: 1, green: 0.38, blue: 0.38, opacity: 0.7)
+    ]
 
     var body: some View {
         NavigationView {
             List {
-                Button("Save User") {
-                    let encoder = JSONEncoder()
-                    
-                    if let data  = try? encoder.encode(user) {
-                        UserDefaults.standard.set(data, forKey: "userData")
+                Section("Personal") {
+                    ForEach(expenses.items) {expense in
+                        if expense.type == "Personal" {
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text(expense.name)
+                                        .font(.headline)
+                                    Text(expense.type)
+                                }
+                                Spacer()
+                                Text(expense.amount, format: .currency(code: Locale.current.currency?.identifier ?? "INR"))
+                            }
+                            .listRowBackground(getColor(amount: expense.amount))
+                        }
                     }
+                    .onDelete(perform: removeItem)
+                }
+                Section("Business") {
+                    ForEach(expenses.items) {expense in
+                        if expense.type == "Business" {
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text(expense.name)
+                                        .font(.headline)
+                                    Text(expense.type)
+                                }
+                                Spacer()
+                                Text(expense.amount, format: .currency(code: Locale.current.currency?.identifier ?? "INR"))
+                            }
+                            .listRowBackground(getColor(amount: expense.amount))
+                        }
+                    }
+                    .onDelete(perform: removeItem)
                 }
             }
+            .listStyle(.sidebar)
             .navigationTitle("iExpense")
-            .onAppear(perform: decodeData)
-        }
-    }
-    
-    func decodeData() {
-        let decoder = JSONDecoder()
-        if let encodedData = UserDefaults.standard.data(forKey: "userData") {
-            if let data = try? decoder.decode(User.self, from: encodedData) {
-                user = data
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Add item") {
+                        showingAddExpense = true
+                    }
+                }
+                ToolbarItem(placement: .bottomBar) {
+                    HStack {
+                        Text("Total Expense")
+                        Spacer()
+                        Text(expenses.total, format: .currency(code: Locale.current.currency?.identifier ?? "INR"))
+                    }
+                    .font(.headline)
+                }
+            }
+            .sheet(isPresented: $showingAddExpense) {
+                AddView(expenses: expenses)
             }
         }
-        print(user)
+        .searchable(text: $searchText)
+    }
+    
+    func removeItem(at offsets: IndexSet) {
+        if let index = offsets.first {
+            expenses.total -= expenses.items[index].amount
+        }
+        expenses.items.remove(atOffsets: offsets)
+    }
+    
+    func getColor(amount: Double) -> Color {
+        if amount <= 50 {
+            return colors[0]
+        } else if amount > 50 && amount <= 100 {
+            return colors[1]
+        } else {
+            return colors[2]
+        }
     }
 }
 
