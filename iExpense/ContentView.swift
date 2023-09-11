@@ -7,19 +7,38 @@
 
 import SwiftUI
 
-class User: ObservableObject {
-    @Published var firstName = "Bilbo"
-    @Published var lastName = "Baggins"
+struct SecondView: View {
+    @Environment(\.dismiss) var dismiss
+    let name: String
+    var body: some View {
+        NavigationView {
+            List {
+                Text("Second View \(name)")
+            }
+            .navigationTitle("Details")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                Button("Done") {
+                    dismiss()
+                }
+            }
+        }
+    }
 }
 
 struct ContentView: View {
-    @StateObject private var user = User()
-    
+    @State private var showingSheet = false
     var body: some View {
-        Form {
-            Text("Your name is \(user.firstName) \(user.lastName)")
-            TextField("First Name", text: $user.firstName)
-            TextField("Last Name", text: $user.lastName)
+        NavigationView {
+            List {
+                Button("Show sheet") {
+                    showingSheet.toggle()
+                }
+            }
+            .sheet(isPresented: $showingSheet) {
+                SecondView(name: "Rishi Singh")
+            }
+            .navigationTitle("IExpence")
         }
     }
 }
